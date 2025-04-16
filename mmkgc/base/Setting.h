@@ -6,8 +6,8 @@
 #include <cstdio>
 #include <string>
 
-std::string inPath = "../data/FB15K/";
-std::string outPath = "../data/FB15K/";
+std::string inPath = "../data/DB15K/";
+std::string outPath = "../data/DB15K/";
 std::string ent_file = "";
 std::string rel_file = "";
 std::string train_file = "";
