@@ -5,7 +5,6 @@ from mmkgc.module.loss import SigmoidLoss
 from mmkgc.module.strategy import NegativeSamplingGP
 from mmkgc.data import TrainDataLoader, TestDataLoader
 from mmkgc.adv.modules import CombinedGenerator3
-
 from args import get_args
 
 if __name__ == "__main__":
@@ -14,7 +13,7 @@ if __name__ == "__main__":
     # set the seed
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
-    # dataloader for training
+
     train_dataloader = TrainDataLoader(
         in_path="./benchmarks/" + args.dataset + "/",
         batch_size=args.batch_size,
@@ -25,7 +24,7 @@ if __name__ == "__main__":
         neg_ent=args.neg_num,
         neg_rel=0,
     )
-    # dataloader for test
+
     test_dataloader = TestDataLoader("./benchmarks/" + args.dataset + "/", "link")
     img_emb = torch.load("./embeddings/" + args.dataset + "-visual.pth")
     text_emb = torch.load("./embeddings/" + args.dataset + "-textual.pth")
@@ -69,6 +68,6 @@ if __name__ == "__main__":
     kge_score.save_checkpoint(args.save)
 
     # test the model
-    # kge_score.load_checkpoint(args.save)
+    kge_score.load_checkpoint(args.save)
     tester = Tester(model=kge_score, data_loader=test_dataloader, use_gpu=True)
     tester.run_link_prediction(type_constrain=False)
