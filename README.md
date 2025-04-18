@@ -1,4 +1,6 @@
-# Research and Implementation of Multi-modal Knowledge Graph Reasoning Based on Large Models
+## dissertation title：
+
+Research and Implementation of Multi-modal Knowledge Graph Reasoning Based on Large Models
 
 ## Dependencies
 
@@ -42,5 +44,3 @@ CUDA_VISIBLE_DEVICES=1 nohup python run_adv_wgan_gp_3modal.py -dataset=$DATA \
   -learning_rate=$LR \
   -lrg=$LRG >$DATA-$EMB_DIM-$NUM_BATCH-$NEG_NUM-$MU-$MARGIN-$LR-$EPOCH.txt &
 ```
-
-More training scripts can be found in `scripts/`.
