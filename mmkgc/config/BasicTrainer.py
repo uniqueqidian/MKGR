@@ -16,17 +16,19 @@ from tqdm import tqdm
 
 class BasicTrainer(object):
 
-    def __init__(self,
-                 model=None,
-                 data_loader=None,
-                 train_times=1000,
-                 alpha=0.5,
-                 use_gpu=True,
-                 opt_method="sgd",
-                 save_steps=None,
-                 checkpoint_dir=None,
-                 train_mode='adp',
-                 beta=0.5):
+    def __init__(
+        self,
+        model=None,
+        data_loader=None,
+        train_times=1000,
+        alpha=0.5,
+        use_gpu=True,
+        opt_method="sgd",
+        save_steps=None,
+        checkpoint_dir=None,
+        train_mode="adp",
+        beta=0.5,
+    ):
 
         self.work_threads = 8
         self.train_times = train_times
@@ -48,13 +50,15 @@ class BasicTrainer(object):
 
     def train_one_step(self, data):
         self.optimizer.zero_grad()
-        loss, _ = self.model({
-            'batch_h': self.to_var(data['batch_h'], self.use_gpu),
-            'batch_t': self.to_var(data['batch_t'], self.use_gpu),
-            'batch_r': self.to_var(data['batch_r'], self.use_gpu),
-            'batch_y': self.to_var(data['batch_y'], self.use_gpu),
-            'mode': data['mode']
-        })
+        loss, _ = self.model(
+            {
+                "batch_h": self.to_var(data["batch_h"], self.use_gpu),
+                "batch_t": self.to_var(data["batch_t"], self.use_gpu),
+                "batch_r": self.to_var(data["batch_r"], self.use_gpu),
+                "batch_y": self.to_var(data["batch_y"], self.use_gpu),
+                "mode": data["mode"],
+            }
+        )
         loss.backward()
         self.optimizer.step()
         return loss.item()
@@ -99,9 +103,15 @@ class BasicTrainer(object):
                 res += loss
             training_range.set_description("Epoch %d | loss: %f" % (epoch, res))
 
-            if self.save_steps and self.checkpoint_dir and (epoch + 1) % self.save_steps == 0:
+            if (
+                self.save_steps
+                and self.checkpoint_dir
+                and (epoch + 1) % self.save_steps == 0
+            ):
                 print("Epoch %d has finished, saving..." % (epoch))
-                self.model.save_checkpoint(os.path.join(self.checkpoint_dir + "-" + str(epoch) + ".ckpt"))
+                self.model.save_checkpoint(
+                    os.path.join(self.checkpoint_dir + "-" + str(epoch) + ".ckpt")
+                )
 
     def set_model(self, model):
         self.model = model

@@ -13,9 +13,9 @@ CUDA_VISIBLE_DEVICES=1 nohup python run_adv_wgan_gp_3modal.py -dataset=$DATA \
   -margin=$MARGIN \
   -epoch=$EPOCH \
   -dim=$EMB_DIM \
-  -adv_num=$ADV\
+  -adv_num=$ADV \
   -save=$DATA-$NUM_BATCH-$EMB_DIM-$NEG_NUM-$MU-$MARGIN-$LR-$EPOCH \
   -neg_num=$NEG_NUM \
   -mu=$MU \
-  -learning_rate=$LR\
-  -lrg=$LRG > $DATA-$EMB_DIM-$NUM_BATCH-$NEG_NUM-$MU-$MARGIN-$LR-$EPOCH.txt &
+  -learning_rate=$LR \
+  -lrg=$LRG >$DATA-$EMB_DIM-$NUM_BATCH-$NEG_NUM-$MU-$MARGIN-$LR-$EPOCH.txt &

@@ -16,5 +16,5 @@ CUDA_VISIBLE_DEVICES=2 nohup python run_adv_wgan_gp_4modal.py -dataset=$DATA \
   -save=./checkpoint/$DATA-$NUM_BATCH-$EMB_DIM-$NEG_NUM-$MU-$MARGIN-$LR-$LRG-$EPOCH \
   -neg_num=$NEG_NUM \
   -mu=$MU \
-  -learning_rate=$LR\
-  -lrg=$LRG > $DATA-$EMB_DIM-$NUM_BATCH-$NEG_NUM-$MU-$MARGIN-$LR-$LRG-$EPOCH.txt &
+  -learning_rate=$LR \
+  -lrg=$LRG >$DATA-$EMB_DIM-$NUM_BATCH-$NEG_NUM-$MU-$MARGIN-$LR-$LRG-$EPOCH.txt &

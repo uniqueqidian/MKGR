@@ -14,8 +14,8 @@ std::string train_file = "";
 std::string valid_file = "";
 std::string test_file = "";
 
-extern "C"
-void setInPath(char *path) {
+extern "C" void setInPath(char *path)
+{
 	INT len = strlen(path);
 	inPath = "";
 	for (INT i = 0; i < len; i++)
@@ -23,8 +23,8 @@ void setInPath(char *path) {
 	printf("Input Files Path : %s\n", inPath.c_str());
 }
 
-extern "C"
-void setOutPath(char *path) {
+extern "C" void setOutPath(char *path)
+{
 	INT len = strlen(path);
 	outPath = "";
 	for (INT i = 0; i < len; i++)
@@ -32,8 +32,8 @@ void setOutPath(char *path) {
 	printf("Output Files Path : %s\n", outPath.c_str());
 }
 
-extern "C"
-void setTrainPath(char *path) {
+extern "C" void setTrainPath(char *path)
+{
 	INT len = strlen(path);
 	train_file = "";
 	for (INT i = 0; i < len; i++)
@@ -41,8 +41,8 @@ void setTrainPath(char *path) {
 	printf("Training Files Path : %s\n", train_file.c_str());
 }
 
-extern "C"
-void setValidPath(char *path) {
+extern "C" void setValidPath(char *path)
+{
 	INT len = strlen(path);
 	valid_file = "";
 	for (INT i = 0; i < len; i++)
@@ -50,8 +50,8 @@ void setValidPath(char *path) {
 	printf("Valid Files Path : %s\n", valid_file.c_str());
 }
 
-extern "C"
-void setTestPath(char *path) {
+extern "C" void setTestPath(char *path)
+{
 	INT len = strlen(path);
 	test_file = "";
 	for (INT i = 0; i < len; i++)
@@ -59,8 +59,8 @@ void setTestPath(char *path) {
 	printf("Test Files Path : %s\n", test_file.c_str());
 }
 
-extern "C"
-void setEntPath(char *path) {
+extern "C" void setEntPath(char *path)
+{
 	INT len = strlen(path);
 	ent_file = "";
 	for (INT i = 0; i < len; i++)
@@ -68,8 +68,8 @@ void setEntPath(char *path) {
 	printf("Entity Files Path : %s\n", ent_file.c_str());
 }
 
-extern "C"
-void setRelPath(char *path) {
+extern "C" void setRelPath(char *path)
+{
 	INT len = strlen(path);
 	rel_file = "";
 	for (INT i = 0; i < len; i++)
@@ -83,13 +83,13 @@ void setRelPath(char *path) {
 
 INT workThreads = 1;
 
-extern "C"
-void setWorkThreads(INT threads) {
+extern "C" void setWorkThreads(INT threads)
+{
 	workThreads = threads;
 }
 
-extern "C"
-INT getWorkThreads() {
+extern "C" INT getWorkThreads()
+{
 	return workThreads;
 }
 
@@ -104,33 +104,33 @@ INT testTotal = 0;
 INT trainTotal = 0;
 INT validTotal = 0;
 
-extern "C"
-INT getEntityTotal() {
+extern "C" INT getEntityTotal()
+{
 	return entityTotal;
 }
 
-extern "C"
-INT getRelationTotal() {
+extern "C" INT getRelationTotal()
+{
 	return relationTotal;
 }
 
-extern "C"
-INT getTripleTotal() {
+extern "C" INT getTripleTotal()
+{
 	return tripleTotal;
 }
 
-extern "C"
-INT getTrainTotal() {
+extern "C" INT getTrainTotal()
+{
 	return trainTotal;
 }
 
-extern "C"
-INT getTestTotal() {
+extern "C" INT getTestTotal()
+{
 	return testTotal;
 }
 
-extern "C"
-INT getValidTotal() {
+extern "C" INT getValidTotal()
+{
 	return validTotal;
 }
 /*
@@ -139,8 +139,8 @@ INT getValidTotal() {
 
 INT bernFlag = 0;
 
-extern "C"
-void setBern(INT con) {
+extern "C" void setBern(INT con)
+{
 	bernFlag = con;
 }
 

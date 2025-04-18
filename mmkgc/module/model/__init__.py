@@ -17,16 +17,16 @@ from .AdvRelRotatEKuai16K import AdvRelRotatEKuai16K
 from .QEB import QEB
 
 __all__ = [
-    'Model',
-    'TransE',
-    'RotatE',
-    'IKRL',
-    'RSME',
-    'TBKGC',
-    'TransAE',
-    'MMKRL',
-    'AdvRelRotatE',
-    'AdvRelRotatEDB15K',
-    'AdvRelRotatEKuai16K',
-    'QEB'
+    "Model",
+    "TransE",
+    "RotatE",
+    "IKRL",
+    "RSME",
+    "TBKGC",
+    "TransAE",
+    "MMKRL",
+    "AdvRelRotatE",
+    "AdvRelRotatEDB15K",
+    "AdvRelRotatEKuai16K",
+    "QEB",
 ]

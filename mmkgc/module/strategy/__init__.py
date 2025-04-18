@@ -13,11 +13,11 @@ from .NegativeSamplingJoint import NegativeSamplingJoint
 from .TuckerPred import TuckerPred
 
 __all__ = [
-    'Strategy',
-    'NegativeSampling',
-    'TransAENegativeSampling',
-    'MMKRLNegativeSampling',
-    'NegativeSamplingGP',
-    'NegativeSamplingDS',
-    'NegativeSamplingJoint'
+    "Strategy",
+    "NegativeSampling",
+    "TransAENegativeSampling",
+    "MMKRLNegativeSampling",
+    "NegativeSamplingGP",
+    "NegativeSamplingDS",
+    "NegativeSamplingJoint",
 ]

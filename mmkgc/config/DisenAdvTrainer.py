@@ -16,7 +16,8 @@ from tqdm import tqdm
 
 class DisenAdvTrainer(object):
 
-    def __init__(self,
+    def __init__(
+        self,
         model=None,
         data_loader=None,
         train_times=1000,
@@ -25,11 +26,11 @@ class DisenAdvTrainer(object):
         opt_method="sgd",
         save_steps=None,
         checkpoint_dir=None,
-        train_mode='adp',
+        train_mode="adp",
         alpha2=0.0001,
         generator=None,
         lrg=None,
-        mu=None
+        mu=None,
     ):
 
         self.work_threads = 8
@@ -62,35 +63,38 @@ class DisenAdvTrainer(object):
         self.mu = mu
         self.count = 0
 
-
     def train_one_step(self, data):
         # Train KGE model
         self.optimizer.zero_grad()
         data_input = {
-            'batch_h': self.to_var(data['batch_h'], self.use_gpu),
-            'batch_t': self.to_var(data['batch_t'], self.use_gpu),
-            'batch_r': self.to_var(data['batch_r'], self.use_gpu),
-            'batch_y': self.to_var(data['batch_y'], self.use_gpu),
-            'mode': data['mode']
+            "batch_h": self.to_var(data["batch_h"], self.use_gpu),
+            "batch_t": self.to_var(data["batch_t"], self.use_gpu),
+            "batch_r": self.to_var(data["batch_r"], self.use_gpu),
+            "batch_y": self.to_var(data["batch_y"], self.use_gpu),
+            "mode": data["mode"],
         }
         loss, p_score = self.model(data_input)
         # generate fake multimodal feature
-        batch_h_gen = self.to_var(data['batch_h'][0: self.batch_size], self.use_gpu)
-        batch_t_gen = self.to_var(data['batch_t'][0: self.batch_size], self.use_gpu)
-        batch_r = self.to_var(data['batch_r'][0: self.batch_size], self.use_gpu)
-        batch_hs, batch_hv, batch_ht = self.model.model.get_batch_ent_multimodal_embs(batch_h_gen, batch_r)
-        batch_ts, batch_tv, batch_tt = self.model.model.get_batch_ent_multimodal_embs(batch_t_gen, batch_r)
+        batch_h_gen = self.to_var(data["batch_h"][0 : self.batch_size], self.use_gpu)
+        batch_t_gen = self.to_var(data["batch_t"][0 : self.batch_size], self.use_gpu)
+        batch_r = self.to_var(data["batch_r"][0 : self.batch_size], self.use_gpu)
+        batch_hs, batch_hv, batch_ht = self.model.model.get_batch_ent_multimodal_embs(
+            batch_h_gen, batch_r
+        )
+        batch_ts, batch_tv, batch_tt = self.model.model.get_batch_ent_multimodal_embs(
+            batch_t_gen, batch_r
+        )
         batch_gen_hv, batch_gen_ht = self.generator(batch_hs, batch_hv, batch_ht)
         batch_gen_tv, batch_gen_tt = self.generator(batch_ts, batch_tv, batch_tt)
         scores, _ = self.model.model.get_fake_score(
             batch_h=batch_h_gen,
             batch_r=batch_r,
             batch_t=batch_t_gen,
-            mode=data['mode'],
+            mode=data["mode"],
             fake_hv=batch_gen_hv,
             fake_tv=batch_gen_tv,
             fake_ht=batch_gen_ht,
-            fake_tt=batch_gen_tt
+            fake_tt=batch_gen_tt,
         )
         for score in scores:
             loss += self.mu * self.model.loss(p_score, score)
@@ -107,40 +111,53 @@ class DisenAdvTrainer(object):
         else:
             # Train Generator
             self.optimizer_gen.zero_grad()
-            batch_hs, batch_hv, batch_ht = self.model.model.get_batch_ent_multimodal_embs(batch_h_gen, batch_r)
-            batch_ts, batch_tv, batch_tt = self.model.model.get_batch_ent_multimodal_embs(batch_t_gen, batch_r)
+            batch_hs, batch_hv, batch_ht = (
+                self.model.model.get_batch_ent_multimodal_embs(batch_h_gen, batch_r)
+            )
+            batch_ts, batch_tv, batch_tt = (
+                self.model.model.get_batch_ent_multimodal_embs(batch_t_gen, batch_r)
+            )
             batch_gen_hv, batch_gen_ht = self.generator(batch_hs, batch_hv, batch_ht)
             batch_gen_tv, batch_gen_tt = self.generator(batch_ts, batch_tv, batch_tt)
-            p_score = self.model({
-                'batch_h': batch_h_gen,
-                'batch_t': batch_t_gen,
-                'batch_r': batch_r,
-                'batch_y': self.to_var(data['batch_y'], self.use_gpu),
-                'mode': data['mode']
-            }, fast_return=True)
+            p_score = self.model(
+                {
+                    "batch_h": batch_h_gen,
+                    "batch_t": batch_t_gen,
+                    "batch_r": batch_r,
+                    "batch_y": self.to_var(data["batch_y"], self.use_gpu),
+                    "mode": data["mode"],
+                },
+                fast_return=True,
+            )
 
             scores, _ = self.model.model.get_fake_score(
                 batch_h=batch_h_gen,
                 batch_r=batch_r,
                 batch_t=batch_t_gen,
-                mode=data['mode'],
+                mode=data["mode"],
                 fake_hv=batch_gen_hv,
                 fake_tv=batch_gen_tv,
                 fake_ht=batch_gen_ht,
-                fake_tt=batch_gen_tt
+                fake_tt=batch_gen_tt,
             )
-            
+
             for score in scores:
                 loss_g += self.model.loss(score, p_score) / 3
             loss_g.backward()
             self.optimizer_gen.step()
-        return loss.item(), disen_loss.item() if disen_loss != 0.0 else 0, loss_g.item() if loss_g != 0.0 else 0
+        return (
+            loss.item(),
+            disen_loss.item() if disen_loss != 0.0 else 0,
+            loss_g.item() if loss_g != 0.0 else 0,
+        )
 
     def run(self):
         if self.use_gpu:
             self.model.cuda()
         mi_disc_params = list(map(id, self.model.model.disen_modules.parameters()))
-        rest_params = filter(lambda x:id(x) not in mi_disc_params, self.model.model.parameters())
+        rest_params = filter(
+            lambda x: id(x) not in mi_disc_params, self.model.model.parameters()
+        )
         self.optimizer = optim.Adam(
             rest_params,
             lr=self.alpha,
@@ -169,11 +186,20 @@ class DisenAdvTrainer(object):
                 res_dis += loss_dis
                 res_gen += loss_gen
             self.count += 1
-            training_range.set_description("Epoch %d | loss: %f loss_dis: %f loss_gen: %f" % (epoch, res, res_dis, res_gen))
+            training_range.set_description(
+                "Epoch %d | loss: %f loss_dis: %f loss_gen: %f"
+                % (epoch, res, res_dis, res_gen)
+            )
 
-            if self.save_steps and self.checkpoint_dir and (epoch + 1) % self.save_steps == 0:
+            if (
+                self.save_steps
+                and self.checkpoint_dir
+                and (epoch + 1) % self.save_steps == 0
+            ):
                 print("Epoch %d has finished, saving..." % (epoch))
-                self.model.save_checkpoint(os.path.join(self.checkpoint_dir + "-" + str(epoch) + ".ckpt"))
+                self.model.save_checkpoint(
+                    os.path.join(self.checkpoint_dir + "-" + str(epoch) + ".ckpt")
+                )
 
     def set_model(self, model):
         self.model = model

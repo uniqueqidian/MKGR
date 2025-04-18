@@ -15,10 +15,21 @@ from sklearn.metrics import roc_auc_score
 import copy
 from tqdm import tqdm
 
+
 class Tester(object):
 
-    def __init__(self, model = None, data_loader = None, use_gpu = True, other_model=None, norm=False, mu=0.5):
-        base_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../release/Base.so"))
+    def __init__(
+        self,
+        model=None,
+        data_loader=None,
+        use_gpu=True,
+        other_model=None,
+        norm=False,
+        mu=0.5,
+    ):
+        base_file = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../release/Base.so")
+        )
         self.lib = ctypes.cdll.LoadLibrary(base_file)
         self.lib.testHead.argtypes = [ctypes.c_void_p, ctypes.c_int64, ctypes.c_int64]
         self.lib.testTail.argtypes = [ctypes.c_void_p, ctypes.c_int64, ctypes.c_int64]
@@ -64,18 +75,18 @@ class Tester(object):
             return Variable(torch.from_numpy(x))
 
     def test_one_step(self, data):
-        return self.model.predict({
-            'batch_h': self.to_var(data['batch_h'], self.use_gpu),
-            'batch_t': self.to_var(data['batch_t'], self.use_gpu),
-            'batch_r': self.to_var(data['batch_r'], self.use_gpu),
-            'mode': data['mode']
-        })
-            
-            
+        return self.model.predict(
+            {
+                "batch_h": self.to_var(data["batch_h"], self.use_gpu),
+                "batch_t": self.to_var(data["batch_t"], self.use_gpu),
+                "batch_r": self.to_var(data["batch_r"], self.use_gpu),
+                "mode": data["mode"],
+            }
+        )
 
     def run_link_prediction(self, type_constrain=False):
         self.lib.initTest()
-        self.data_loader.set_sampling_mode('link')
+        self.data_loader.set_sampling_mode("link")
         if type_constrain:
             type_constrain = 1
         else:
@@ -83,9 +94,13 @@ class Tester(object):
         training_range = self.data_loader
         for index, [data_head, data_tail] in enumerate(training_range):
             score = self.test_one_step(data_head)
-            self.lib.testHead(score.__array_interface__["data"][0], index, type_constrain)
+            self.lib.testHead(
+                score.__array_interface__["data"][0], index, type_constrain
+            )
             score = self.test_one_step(data_tail)
-            self.lib.testTail(score.__array_interface__["data"][0], index, type_constrain)
+            self.lib.testTail(
+                score.__array_interface__["data"][0], index, type_constrain
+            )
         self.lib.test_link_prediction(type_constrain)
 
         mrr = self.lib.getTestLinkMRR(type_constrain)
@@ -96,7 +111,7 @@ class Tester(object):
         return mrr, mr, hit10, hit3, hit1
 
     def get_best_threshlod(self, score, ans):
-        res = np.concatenate([ans.reshape(-1,1), score.reshape(-1,1)], axis = -1)
+        res = np.concatenate([ans.reshape(-1, 1), score.reshape(-1, 1)], axis=-1)
         order = np.argsort(score)
         res = res[order]
 
@@ -116,9 +131,9 @@ class Tester(object):
                 threshlod = score
         return threshlod, res_mx
 
-    def run_triple_classification(self, threshlod = None):
+    def run_triple_classification(self, threshlod=None):
         self.lib.initTest()
-        self.data_loader.set_sampling_mode('classification')
+        self.data_loader.set_sampling_mode("classification")
         score = []
         ans = []
         training_range = tqdm(self.data_loader)
@@ -131,13 +146,13 @@ class Tester(object):
             ans = ans + [0 for i in range(len(res_pos))]
             score.append(res_neg)
 
-        score = np.concatenate(score, axis = -1)
+        score = np.concatenate(score, axis=-1)
         ans = np.array(ans)
 
         if threshlod == None:
             threshlod, _ = self.get_best_threshlod(score, ans)
 
-        res = np.concatenate([ans.reshape(-1,1), score.reshape(-1,1)], axis = -1)
+        res = np.concatenate([ans.reshape(-1, 1), score.reshape(-1, 1)], axis=-1)
         order = np.argsort(score)
         res = res[order]
 

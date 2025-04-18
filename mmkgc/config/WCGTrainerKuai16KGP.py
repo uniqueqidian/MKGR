@@ -18,19 +18,21 @@ from tqdm import tqdm
 
 class WCGTrainerKuai16KGP(object):
 
-    def __init__(self,
-                 model=None,
-                 data_loader=None,
-                 train_times=1000,
-                 alpha=0.5,
-                 use_gpu=True,
-                 opt_method="sgd",
-                 save_steps=None,
-                 checkpoint_dir=None,
-                 generator=None,
-                 lrg=None,
-                 mu=None,
-                 tester=None):
+    def __init__(
+        self,
+        model=None,
+        data_loader=None,
+        train_times=1000,
+        alpha=0.5,
+        use_gpu=True,
+        opt_method="sgd",
+        save_steps=None,
+        checkpoint_dir=None,
+        generator=None,
+        lrg=None,
+        mu=None,
+        tester=None,
+    ):
 
         self.work_threads = 8
         self.train_times = train_times
@@ -49,7 +51,7 @@ class WCGTrainerKuai16KGP(object):
         self.use_gpu = use_gpu
         self.save_steps = 100
         self.checkpoint_dir = checkpoint_dir
-        
+
         # the generator part
         assert generator is not None
         assert mu is not None
@@ -65,31 +67,41 @@ class WCGTrainerKuai16KGP(object):
     def train_one_step(self, data):
         # training D
         self.optimizer.zero_grad()
-        loss, p_score, real_embs = self.model({
-            'batch_h': self.to_var(data['batch_h'], self.use_gpu),
-            'batch_t': self.to_var(data['batch_t'], self.use_gpu),
-            'batch_r': self.to_var(data['batch_r'], self.use_gpu),
-            'batch_y': self.to_var(data['batch_y'], self.use_gpu),
-            'mode': data['mode']
-        })
+        loss, p_score, real_embs = self.model(
+            {
+                "batch_h": self.to_var(data["batch_h"], self.use_gpu),
+                "batch_t": self.to_var(data["batch_t"], self.use_gpu),
+                "batch_r": self.to_var(data["batch_r"], self.use_gpu),
+                "batch_y": self.to_var(data["batch_y"], self.use_gpu),
+                "mode": data["mode"],
+            }
+        )
         real_embs = [
-            real_embs[0][:self.batch_size],
-            real_embs[1][:self.batch_size],
-            real_embs[2][:self.batch_size]
+            real_embs[0][: self.batch_size],
+            real_embs[1][: self.batch_size],
+            real_embs[2][: self.batch_size],
         ]
         # generate fake multimodal feature
-        batch_h_gen = self.to_var(data['batch_h'][0: self.batch_size], self.use_gpu)
-        batch_t_gen = self.to_var(data['batch_t'][0: self.batch_size], self.use_gpu)
-        batch_r = self.to_var(data['batch_r'][0: self.batch_size], self.use_gpu)
-        batch_hs, batch_hi, batch_ht, batch_ha, batch_hv = self.model.model.get_batch_ent_multimodal_embs(batch_h_gen)
-        batch_ts, batch_ti, batch_tt, batch_ta, batch_tv = self.model.model.get_batch_ent_multimodal_embs(batch_t_gen)
-        batch_gen_hi, batch_gen_ht, batch_gen_ha, batch_gen_hv = self.generator(batch_hs, batch_hi, batch_ht, batch_ha, batch_hv)
-        batch_gen_ti, batch_gen_tt, batch_gen_ta, batch_gen_tv = self.generator(batch_ts, batch_ti, batch_tt, batch_ta, batch_tv)
+        batch_h_gen = self.to_var(data["batch_h"][0 : self.batch_size], self.use_gpu)
+        batch_t_gen = self.to_var(data["batch_t"][0 : self.batch_size], self.use_gpu)
+        batch_r = self.to_var(data["batch_r"][0 : self.batch_size], self.use_gpu)
+        batch_hs, batch_hi, batch_ht, batch_ha, batch_hv = (
+            self.model.model.get_batch_ent_multimodal_embs(batch_h_gen)
+        )
+        batch_ts, batch_ti, batch_tt, batch_ta, batch_tv = (
+            self.model.model.get_batch_ent_multimodal_embs(batch_t_gen)
+        )
+        batch_gen_hi, batch_gen_ht, batch_gen_ha, batch_gen_hv = self.generator(
+            batch_hs, batch_hi, batch_ht, batch_ha, batch_hv
+        )
+        batch_gen_ti, batch_gen_tt, batch_gen_ta, batch_gen_tv = self.generator(
+            batch_ts, batch_ti, batch_tt, batch_ta, batch_tv
+        )
         scores, fake_embs = self.model.model.get_fake_score(
             batch_h=batch_h_gen,
             batch_r=batch_r,
             batch_t=batch_t_gen,
-            mode=data['mode'],
+            mode=data["mode"],
             fake_hi=batch_gen_hi,
             fake_ti=batch_gen_ti,
             fake_ht=batch_gen_ht,
@@ -97,7 +109,7 @@ class WCGTrainerKuai16KGP(object):
             fake_ha=batch_gen_ha,
             fake_ta=batch_gen_ta,
             fake_hv=batch_gen_hv,
-            fake_tv=batch_gen_tv
+            fake_tv=batch_gen_tv,
         )
         # when training D: positive_score > fake_score
         for score in scores:
@@ -108,15 +120,23 @@ class WCGTrainerKuai16KGP(object):
         self.optimizer.step()
         # training G
         self.optimizer_g.zero_grad()
-        batch_hs, batch_hi, batch_ht, batch_ha, batch_hv = self.model.model.get_batch_ent_multimodal_embs(batch_h_gen)
-        batch_ts, batch_ti, batch_tt, batch_ta, batch_tv = self.model.model.get_batch_ent_multimodal_embs(batch_t_gen)
-        batch_gen_hi, batch_gen_ht, batch_gen_ha, batch_gen_hv = self.generator(batch_hs, batch_hi, batch_ht, batch_ha, batch_hv)
-        batch_gen_ti, batch_gen_tt, batch_gen_ta, batch_gen_tv = self.generator(batch_ts, batch_ti, batch_tt, batch_ta, batch_tv)
+        batch_hs, batch_hi, batch_ht, batch_ha, batch_hv = (
+            self.model.model.get_batch_ent_multimodal_embs(batch_h_gen)
+        )
+        batch_ts, batch_ti, batch_tt, batch_ta, batch_tv = (
+            self.model.model.get_batch_ent_multimodal_embs(batch_t_gen)
+        )
+        batch_gen_hi, batch_gen_ht, batch_gen_ha, batch_gen_hv = self.generator(
+            batch_hs, batch_hi, batch_ht, batch_ha, batch_hv
+        )
+        batch_gen_ti, batch_gen_tt, batch_gen_ta, batch_gen_tv = self.generator(
+            batch_ts, batch_ti, batch_tt, batch_ta, batch_tv
+        )
         scores, _ = self.model.model.get_fake_score(
             batch_h=batch_h_gen,
             batch_r=batch_r,
             batch_t=batch_t_gen,
-            mode=data['mode'],
+            mode=data["mode"],
             fake_hi=batch_gen_hi,
             fake_ti=batch_gen_ti,
             fake_ht=batch_gen_ht,
@@ -124,7 +144,7 @@ class WCGTrainerKuai16KGP(object):
             fake_ha=batch_gen_ha,
             fake_ta=batch_gen_ta,
             fake_hv=batch_gen_hv,
-            fake_tv=batch_gen_tv
+            fake_tv=batch_gen_tv,
         )
         loss_g = 0.0
         for score in scores:
@@ -132,7 +152,7 @@ class WCGTrainerKuai16KGP(object):
         loss_g.backward()
         self.optimizer_g.step()
         return loss.item(), loss_g.item()
-    
+
     def calc_gradient_penalty(self, real_data, fake_data):
         batchsize = real_data[0].shape[0]
         alpha = torch.rand(batchsize, 1).cuda()
@@ -151,9 +171,11 @@ class WCGTrainerKuai16KGP(object):
             grad_outputs=torch.ones(scores.size()).cuda(),
             create_graph=True,
             retain_graph=True,
-            only_inputs=True
+            only_inputs=True,
         )[0]
-        gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * self.beta #opt.GP_LAMBDA
+        gradient_penalty = (
+            (gradients.norm(2, dim=1) - 1) ** 2
+        ).mean() * self.beta  # opt.GP_LAMBDA
         return gradient_penalty
 
     def run(self):
@@ -175,7 +197,8 @@ class WCGTrainerKuai16KGP(object):
             )
             print(
                 "Learning Rate of D: {}\nLearning Rate of G: {}".format(
-                    self.alpha, self.alpha_g)
+                    self.alpha, self.alpha_g
+                )
             )
         else:
             raise NotImplementedError
@@ -229,5 +252,3 @@ class WCGTrainerKuai16KGP(object):
 
     def set_checkpoint_dir(self, checkpoint_dir):
         self.checkpoint_dir = checkpoint_dir
-
-

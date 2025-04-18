@@ -12,8 +12,19 @@ from torch.utils.data import Dataset, DataLoader
 
 class PyTorchTrainDataset(Dataset):
 
-    def __init__(self, head, tail, rel, ent_total, rel_total, sampling_mode='normal', bern_flag=False, filter_flag=True,
-                 neg_ent=1, neg_rel=0):
+    def __init__(
+        self,
+        head,
+        tail,
+        rel,
+        ent_total,
+        rel_total,
+        sampling_mode="normal",
+        bern_flag=False,
+        filter_flag=True,
+        neg_ent=1,
+        neg_rel=0,
+    ):
         # triples
         self.head = head
         self.tail = tail
@@ -44,7 +55,7 @@ class PyTorchTrainDataset(Dataset):
     def collate_fn(self, data):
         batch_data = {}
         if self.sampling_mode == "normal":
-            batch_data['mode'] = "normal"
+            batch_data["mode"] = "normal"
             batch_h = np.array([item[0] for item in data]).reshape(-1, 1)
             batch_t = np.array([item[1] for item in data]).reshape(-1, 1)
             batch_r = np.array([item[2] for item in data]).reshape(-1, 1)
@@ -54,48 +65,59 @@ class PyTorchTrainDataset(Dataset):
             for index, item in enumerate(data):
                 last = 1
                 if self.neg_ent > 0:
-                    neg_head, neg_tail = self.__normal_batch(item[0], item[1], item[2], self.neg_ent)
+                    neg_head, neg_tail = self.__normal_batch(
+                        item[0], item[1], item[2], self.neg_ent
+                    )
                     if len(neg_head) > 0:
-                        batch_h[index][last:last + len(neg_head)] = neg_head
+                        batch_h[index][last : last + len(neg_head)] = neg_head
                         last += len(neg_head)
                     if len(neg_tail) > 0:
-                        batch_t[index][last:last + len(neg_tail)] = neg_tail
+                        batch_t[index][last : last + len(neg_tail)] = neg_tail
                         last += len(neg_tail)
                 if self.neg_rel > 0:
                     neg_rel = self.__rel_batch(item[0], item[1], item[2], self.neg_rel)
-                    batch_r[index][last:last + len(neg_rel)] = neg_rel
+                    batch_r[index][last : last + len(neg_rel)] = neg_rel
             batch_h = batch_h.transpose()
             batch_t = batch_t.transpose()
             batch_r = batch_r.transpose()
         else:
             self.cross_sampling_flag = 1 - self.cross_sampling_flag
             if self.cross_sampling_flag == 0:
-                batch_data['mode'] = "head_batch"
+                batch_data["mode"] = "head_batch"
                 batch_h = np.array([[item[0]] for item in data])
                 batch_t = np.array([item[1] for item in data])
                 batch_r = np.array([item[2] for item in data])
                 batch_h = np.repeat(batch_h, 1 + self.neg_ent, axis=-1)
                 for index, item in enumerate(data):
-                    neg_head = self.__head_batch(item[0], item[1], item[2], self.neg_ent)
+                    neg_head = self.__head_batch(
+                        item[0], item[1], item[2], self.neg_ent
+                    )
                     batch_h[index][1:] = neg_head
                 batch_h = batch_h.transpose()
             else:
-                batch_data['mode'] = "tail_batch"
+                batch_data["mode"] = "tail_batch"
                 batch_h = np.array([item[0] for item in data])
                 batch_t = np.array([[item[1]] for item in data])
                 batch_r = np.array([item[2] for item in data])
                 batch_t = np.repeat(batch_t, 1 + self.neg_ent, axis=-1)
                 for index, item in enumerate(data):
-                    neg_tail = self.__tail_batch(item[0], item[1], item[2], self.neg_ent)
+                    neg_tail = self.__tail_batch(
+                        item[0], item[1], item[2], self.neg_ent
+                    )
                     batch_t[index][1:] = neg_tail
                 batch_t = batch_t.transpose()
 
-        batch_y = np.concatenate([np.ones((len(data), 1)), np.zeros((len(data), self.neg_ent + self.neg_rel))],
-                                 -1).transpose()
-        batch_data['batch_h'] = batch_h.squeeze()
-        batch_data['batch_t'] = batch_t.squeeze()
-        batch_data['batch_r'] = batch_r.squeeze()
-        batch_data['batch_y'] = batch_y.squeeze()
+        batch_y = np.concatenate(
+            [
+                np.ones((len(data), 1)),
+                np.zeros((len(data), self.neg_ent + self.neg_rel)),
+            ],
+            -1,
+        ).transpose()
+        batch_data["batch_h"] = batch_h.squeeze()
+        batch_data["batch_t"] = batch_t.squeeze()
+        batch_data["batch_r"] = batch_r.squeeze()
+        batch_data["batch_y"] = batch_y.squeeze()
         return batch_data
 
     def __count_htr(self):
@@ -167,7 +189,11 @@ class PyTorchTrainDataset(Dataset):
     def __normal_batch(self, h, t, r, neg_size):
         neg_size_h = 0
         neg_size_t = 0
-        prob = self.rig_mean[r] / (self.rig_mean[r] + self.lef_mean[r]) if self.bern_flag else 0.5
+        prob = (
+            self.rig_mean[r] / (self.rig_mean[r] + self.lef_mean[r])
+            if self.bern_flag
+            else 0.5
+        )
         for i in range(neg_size):
             if random.random() < prob:
                 neg_size_h += 1
@@ -177,7 +203,9 @@ class PyTorchTrainDataset(Dataset):
         neg_list_h = []
         neg_cur_size = 0
         while neg_cur_size < neg_size_h:
-            neg_tmp_h = self.__corrupt_head(t, r, num_max=(neg_size_h - neg_cur_size) * 2)
+            neg_tmp_h = self.__corrupt_head(
+                t, r, num_max=(neg_size_h - neg_cur_size) * 2
+            )
             neg_list_h.append(neg_tmp_h)
             neg_cur_size += len(neg_tmp_h)
         if neg_list_h != []:
@@ -186,7 +214,9 @@ class PyTorchTrainDataset(Dataset):
         neg_list_t = []
         neg_cur_size = 0
         while neg_cur_size < neg_size_t:
-            neg_tmp_t = self.__corrupt_tail(h, r, num_max=(neg_size_t - neg_cur_size) * 2)
+            neg_tmp_t = self.__corrupt_tail(
+                h, r, num_max=(neg_size_t - neg_cur_size) * 2
+            )
             neg_list_t.append(neg_tmp_t)
             neg_cur_size += len(neg_tmp_t)
         if neg_list_t != []:
@@ -250,21 +280,23 @@ class PyTorchTrainDataset(Dataset):
 
 class PyTorchTrainDataLoader(DataLoader):
 
-    def __init__(self,
-                 in_path=None,
-                 tri_file=None,
-                 ent_file=None,
-                 rel_file=None,
-                 batch_size=None,
-                 nbatches=None,
-                 threads=8,
-                 sampling_mode="normal",
-                 bern_flag=False,
-                 filter_flag=True,
-                 neg_ent=1,
-                 neg_rel=0,
-                 shuffle=True,
-                 drop_last=True):
+    def __init__(
+        self,
+        in_path=None,
+        tri_file=None,
+        ent_file=None,
+        rel_file=None,
+        batch_size=None,
+        nbatches=None,
+        threads=8,
+        sampling_mode="normal",
+        bern_flag=False,
+        filter_flag=True,
+        neg_ent=1,
+        neg_rel=0,
+        shuffle=True,
+        drop_last=True,
+    ):
 
         self.in_path = in_path
         self.tri_file = tri_file
@@ -275,7 +307,9 @@ class PyTorchTrainDataLoader(DataLoader):
             self.ent_file = in_path + "entity2id.txt"
             self.rel_file = in_path + "relation2id.txt"
 
-        dataset = self.__construct_dataset(sampling_mode, bern_flag, filter_flag, neg_ent, neg_rel)
+        dataset = self.__construct_dataset(
+            sampling_mode, bern_flag, filter_flag, neg_ent, neg_rel
+        )
 
         self.batch_size = batch_size
         self.nbatches = nbatches
@@ -291,9 +325,12 @@ class PyTorchTrainDataLoader(DataLoader):
             pin_memory=True,
             num_workers=threads,
             collate_fn=dataset.collate_fn,
-            drop_last=drop_last)
+            drop_last=drop_last,
+        )
 
-    def __construct_dataset(self, sampling_mode, bern_flag, filter_flag, neg_ent, neg_rel):
+    def __construct_dataset(
+        self, sampling_mode, bern_flag, filter_flag, neg_ent, neg_rel
+    ):
         f = open(self.ent_file, "r")
         ent_total = (int)(f.readline())
         f.close()
@@ -315,8 +352,18 @@ class PyTorchTrainDataLoader(DataLoader):
             rel.append((int)(r))
         f.close()
 
-        dataset = PyTorchTrainDataset(np.array(head), np.array(tail), np.array(rel), ent_total, rel_total,
-                                      sampling_mode, bern_flag, filter_flag, neg_ent, neg_rel)
+        dataset = PyTorchTrainDataset(
+            np.array(head),
+            np.array(tail),
+            np.array(rel),
+            ent_total,
+            rel_total,
+            sampling_mode,
+            bern_flag,
+            filter_flag,
+            neg_ent,
+            neg_rel,
+        )
         return dataset
 
     """interfaces to set essential parameters"""

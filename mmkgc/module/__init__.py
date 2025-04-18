@@ -4,6 +4,4 @@ from __future__ import print_function
 
 from .BaseModule import BaseModule
 
-__init__ = {
-	'BaseModule'
-}
+__init__ = {"BaseModule"}

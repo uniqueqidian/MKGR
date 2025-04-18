@@ -3,7 +3,15 @@ from .Strategy import Strategy
 
 class NegativeSamplingJoint(Strategy):
 
-    def __init__(self, model=None, loss=None, batch_size=256, regul_rate=0.0, l3_regul_rate=0.0, disen_weight=0.01):
+    def __init__(
+        self,
+        model=None,
+        loss=None,
+        batch_size=256,
+        regul_rate=0.0,
+        l3_regul_rate=0.0,
+        disen_weight=0.01,
+    ):
         super(NegativeSamplingJoint, self).__init__()
         self.model = model
         self.loss = loss
@@ -13,14 +21,13 @@ class NegativeSamplingJoint(Strategy):
 
         self.disen_weight = disen_weight
 
-
     def _get_positive_score(self, score):
-        positive_score = score[:self.batch_size]
+        positive_score = score[: self.batch_size]
         positive_score = positive_score.view(-1, self.batch_size).permute(1, 0)
         return positive_score
 
     def _get_negative_score(self, score):
-        negative_score = score[self.batch_size:]
+        negative_score = score[self.batch_size :]
         negative_score = negative_score.view(-1, self.batch_size).permute(1, 0)
         return negative_score
 

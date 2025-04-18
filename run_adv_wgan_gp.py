@@ -16,20 +16,19 @@ if __name__ == "__main__":
     torch.cuda.manual_seed_all(args.seed)
     # dataloader for training
     train_dataloader = TrainDataLoader(
-        in_path="./benchmarks/" + args.dataset + '/',
+        in_path="./benchmarks/" + args.dataset + "/",
         batch_size=args.batch_size,
         threads=8,
         sampling_mode="normal",
         bern_flag=1,
         filter_flag=1,
         neg_ent=args.neg_num,
-        neg_rel=0
+        neg_rel=0,
     )
     # dataloader for test
-    test_dataloader = TestDataLoader(
-        "./benchmarks/" + args.dataset + '/', "link")
-    img_emb = torch.load('./embeddings/' + args.dataset + '-visual.pth')
-    text_emb = torch.load('./embeddings/' + args.dataset + '-textual.pth')
+    test_dataloader = TestDataLoader("./benchmarks/" + args.dataset + "/", "link")
+    img_emb = torch.load("./embeddings/" + args.dataset + "-visual.pth")
+    text_emb = torch.load("./embeddings/" + args.dataset + "-textual.pth")
     # define the model
     kge_score = AdvRelRotatE(
         ent_tot=train_dataloader.get_ent_tot(),
@@ -38,7 +37,7 @@ if __name__ == "__main__":
         margin=args.margin,
         epsilon=2.0,
         img_emb=img_emb,
-        text_emb=text_emb
+        text_emb=text_emb,
     )
     print(kge_score)
     # define the loss function
@@ -46,13 +45,11 @@ if __name__ == "__main__":
         model=kge_score,
         loss=SigmoidLoss(adv_temperature=args.adv_temp),
         batch_size=train_dataloader.get_batch_size(),
-        regul_rate=0.00001
+        regul_rate=0.00001,
     )
-    
+
     adv_generator = CombinedGenerator(
-        noise_dim=64,
-        structure_dim=2*args.dim,
-        img_dim=2*args.dim
+        noise_dim=64, structure_dim=2 * args.dim, img_dim=2 * args.dim
     )
     # train the model
     trainer = WCGTrainerGP(
@@ -61,10 +58,10 @@ if __name__ == "__main__":
         train_times=args.epoch,
         alpha=args.learning_rate,
         use_gpu=True,
-        opt_method='Adam',
+        opt_method="Adam",
         generator=adv_generator,
         lrg=args.lrg,
-        mu=args.mu
+        mu=args.mu,
     )
 
     trainer.run()

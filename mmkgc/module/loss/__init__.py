@@ -8,8 +8,8 @@ from .SoftplusLoss import SoftplusLoss
 from .SigmoidLoss import SigmoidLoss
 
 __all__ = [
-    'Loss',
-    'MarginLoss',
-    'SoftplusLoss',
-    'SigmoidLoss',
+    "Loss",
+    "MarginLoss",
+    "SoftplusLoss",
+    "SigmoidLoss",
 ]

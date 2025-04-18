@@ -15,7 +15,7 @@ class AdvRelRotatEDB15K(Model):
         epsilon=2.0,
         img_emb=None,
         text_emb=None,
-        numeric_emb=None
+        numeric_emb=None,
     ):
 
         super(AdvRelRotatEDB15K, self).__init__(ent_tot, rel_tot)
@@ -29,7 +29,7 @@ class AdvRelRotatEDB15K(Model):
         self.rel_embeddings = nn.Embedding(self.rel_tot, self.dim_r)
         self.ent_embedding_range = nn.Parameter(
             torch.Tensor([(self.margin + self.epsilon) / self.dim_e]),
-            requires_grad=False
+            requires_grad=False,
         )
 
         self.img_dim = 256
@@ -47,9 +47,15 @@ class AdvRelRotatEDB15K(Model):
         numeric_emb = txt_pool(numeric_emb.view(-1, 12, 64))
         numeric_emb = numeric_emb.view(numeric_emb.size(0), -1)
 
-        self.img_embeddings = nn.Embedding.from_pretrained(img_emb).requires_grad_(False)
-        self.text_embeddings = nn.Embedding.from_pretrained(text_emb).requires_grad_(True)
-        self.numeric_embeddings = nn.Embedding.from_pretrained(numeric_emb).requires_grad_(False)
+        self.img_embeddings = nn.Embedding.from_pretrained(img_emb).requires_grad_(
+            False
+        )
+        self.text_embeddings = nn.Embedding.from_pretrained(text_emb).requires_grad_(
+            True
+        )
+        self.numeric_embeddings = nn.Embedding.from_pretrained(
+            numeric_emb
+        ).requires_grad_(False)
 
         # Old setting: 1-layer fc
         # self.img_proj = nn.Linear(self.img_dim, self.dim_e)
@@ -60,34 +66,34 @@ class AdvRelRotatEDB15K(Model):
         self.img_proj = nn.Sequential(
             nn.Linear(self.img_dim, self.dim_e),
             nn.ReLU(),
-            nn.Linear(self.dim_e, self.dim_e)
+            nn.Linear(self.dim_e, self.dim_e),
         )
         self.text_proj = nn.Sequential(
             nn.Linear(self.text_dim, self.dim_e),
             nn.ReLU(),
-            nn.Linear(self.dim_e, self.dim_e)
+            nn.Linear(self.dim_e, self.dim_e),
         )
         self.numeric_proj = nn.Sequential(
             nn.Linear(self.text_dim, self.dim_e),
             nn.ReLU(),
-            nn.Linear(self.dim_e, self.dim_e)
+            nn.Linear(self.dim_e, self.dim_e),
         )
-        
+
         self.ent_attn = nn.Linear(self.dim_e, 1, bias=False)
         self.ent_attn.requires_grad_(True)
         nn.init.uniform_(
             tensor=self.ent_embeddings.weight.data,
             a=-self.ent_embedding_range.item(),
-            b=self.ent_embedding_range.item()
+            b=self.ent_embedding_range.item(),
         )
         self.rel_embedding_range = nn.Parameter(
             torch.Tensor([(self.margin + self.epsilon) / self.dim_r]),
-            requires_grad=False
+            requires_grad=False,
         )
         nn.init.uniform_(
             tensor=self.rel_embeddings.weight.data,
             a=-self.rel_embedding_range.item(),
-            b=self.rel_embedding_range.item()
+            b=self.rel_embedding_range.item(),
         )
         self.margin = nn.Parameter(torch.Tensor([margin]))
         self.margin.requires_grad = False
@@ -96,15 +102,14 @@ class AdvRelRotatEDB15K(Model):
         nn.init.uniform_(
             tensor=self.rel_gate.weight.data,
             a=-self.ent_embedding_range.item(),
-            b=self.ent_embedding_range.item()
+            b=self.ent_embedding_range.item(),
         )
-    
+
     def gated_fusion(self, emb, rel):
         # emb: batch_size x dim
         # rel: batch_size x dim
         w = torch.sigmoid(emb * rel)
         return w * emb + (1 - w) * rel
-        
 
     def get_joint_embeddings(self, es, ei, et, ea, rg):
         e = torch.stack((es, ei, et, ea), dim=1)
@@ -114,10 +119,8 @@ class AdvRelRotatEDB15K(Model):
         context_vectors = torch.sum(attention_weights.unsqueeze(-1) * e, dim=1)
         return context_vectors
 
-    
     def cal_score(self, embs):
         return self._calc(embs[0], embs[2], embs[1], "")
-    
 
     def _calc(self, h, t, r, mode):
         pi = self.pi_const
@@ -130,18 +133,24 @@ class AdvRelRotatEDB15K(Model):
         re_relation = torch.cos(phase_relation)
         im_relation = torch.sin(phase_relation)
 
-        re_head = re_head.view(-1,
-                               re_relation.shape[0], re_head.shape[-1]).permute(1, 0, 2)
-        re_tail = re_tail.view(-1,
-                               re_relation.shape[0], re_tail.shape[-1]).permute(1, 0, 2)
-        im_head = im_head.view(-1,
-                               re_relation.shape[0], im_head.shape[-1]).permute(1, 0, 2)
-        im_tail = im_tail.view(-1,
-                               re_relation.shape[0], im_tail.shape[-1]).permute(1, 0, 2)
+        re_head = re_head.view(-1, re_relation.shape[0], re_head.shape[-1]).permute(
+            1, 0, 2
+        )
+        re_tail = re_tail.view(-1, re_relation.shape[0], re_tail.shape[-1]).permute(
+            1, 0, 2
+        )
+        im_head = im_head.view(-1, re_relation.shape[0], im_head.shape[-1]).permute(
+            1, 0, 2
+        )
+        im_tail = im_tail.view(-1, re_relation.shape[0], im_tail.shape[-1]).permute(
+            1, 0, 2
+        )
         im_relation = im_relation.view(
-            -1, re_relation.shape[0], im_relation.shape[-1]).permute(1, 0, 2)
+            -1, re_relation.shape[0], im_relation.shape[-1]
+        ).permute(1, 0, 2)
         re_relation = re_relation.view(
-            -1, re_relation.shape[0], re_relation.shape[-1]).permute(1, 0, 2)
+            -1, re_relation.shape[0], re_relation.shape[-1]
+        ).permute(1, 0, 2)
 
         if mode == "head_batch":
             re_score = re_relation * re_tail + im_relation * im_tail
@@ -159,10 +168,10 @@ class AdvRelRotatEDB15K(Model):
         return score.permute(1, 0).flatten()
 
     def forward(self, data):
-        batch_h = data['batch_h']
-        batch_t = data['batch_t']
-        batch_r = data['batch_r']
-        mode = data['mode']
+        batch_h = data["batch_h"]
+        batch_t = data["batch_t"]
+        batch_r = data["batch_r"]
+        mode = data["mode"]
         h = self.ent_embeddings(batch_h)
         t = self.ent_embeddings(batch_t)
         r = self.rel_embeddings(batch_r)
@@ -177,12 +186,12 @@ class AdvRelRotatEDB15K(Model):
         t_joint = self.get_joint_embeddings(t, t_img_emb, t_text_emb, t_numeric_emb, rg)
         score = self.margin - self._calc(h_joint, t_joint, r, mode)
         return score
-    
+
     def forward_and_return_embs(self, data):
-        batch_h = data['batch_h']
-        batch_t = data['batch_t']
-        batch_r = data['batch_r']
-        mode = data['mode']
+        batch_h = data["batch_h"]
+        batch_t = data["batch_t"]
+        batch_r = data["batch_r"]
+        mode = data["mode"]
         h = self.ent_embeddings(batch_h)
         t = self.ent_embeddings(batch_t)
         r = self.rel_embeddings(batch_r)
@@ -197,11 +206,10 @@ class AdvRelRotatEDB15K(Model):
         t_joint = self.get_joint_embeddings(t, t_img_emb, t_text_emb, t_numeric_emb, rg)
         score = self.margin - self._calc(h_joint, t_joint, r, mode)
         return score, [h_joint, r, t_joint]
-    
-    
+
     def get_batch_ent_embs(self, data):
         return self.ent_embeddings(data)
-    
+
     def get_batch_vis_embs(self, data):
         return self.img_proj(self.img_embeddings(data))
 
@@ -209,15 +217,20 @@ class AdvRelRotatEDB15K(Model):
         return self.text_proj(self.text_embeddings(data))
 
     def get_batch_ent_multimodal_embs(self, data):
-        return self.ent_embeddings(data), self.img_proj(self.img_embeddings(data)), self.text_proj(self.text_embeddings(data)), self.numeric_proj(self.numeric_embeddings(data))
-    
+        return (
+            self.ent_embeddings(data),
+            self.img_proj(self.img_embeddings(data)),
+            self.text_proj(self.text_embeddings(data)),
+            self.numeric_proj(self.numeric_embeddings(data)),
+        )
+
     def get_fake_score(
         self,
         batch_h,
-        batch_r, 
+        batch_r,
         batch_t,
         mode,
-        fake_hi=None, 
+        fake_hi=None,
         fake_ti=None,
         fake_ht=None,
         fake_tt=None,
@@ -251,17 +264,14 @@ class AdvRelRotatEDB15K(Model):
         return score.cpu().data.numpy()
 
     def regularization(self, data):
-        batch_h = data['batch_h']
-        batch_t = data['batch_t']
-        batch_r = data['batch_r']
+        batch_h = data["batch_h"]
+        batch_t = data["batch_t"]
+        batch_r = data["batch_r"]
         h = self.ent_embeddings(batch_h)
         t = self.ent_embeddings(batch_t)
         r = self.rel_embeddings(batch_r)
-        regul = (torch.mean(h ** 2) +
-                 torch.mean(t ** 2) +
-                 torch.mean(r ** 2)) / 3
+        regul = (torch.mean(h**2) + torch.mean(t**2) + torch.mean(r**2)) / 3
         return regul
-    
 
     def get_attention_weight(self, h, t):
         h = torch.LongTensor([h])
@@ -276,7 +286,7 @@ class AdvRelRotatEDB15K(Model):
         h_attn = self.get_attention(h_s, h_img_emb, h_text_emb)
         t_attn = self.get_attention(t_s, t_img_emb, t_text_emb)
         return h_attn, t_attn
-    
+
     def attention_weight(self, es, ei, et, ea, rg):
         e = torch.stack((es, ei, et, ea), dim=1)
         u = torch.tanh(e)

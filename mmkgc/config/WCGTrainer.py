@@ -18,18 +18,20 @@ from tqdm import tqdm
 
 class WCGTrainer(object):
 
-    def __init__(self,
-                 model=None,
-                 data_loader=None,
-                 train_times=1000,
-                 alpha=0.5,
-                 use_gpu=True,
-                 opt_method="sgd",
-                 save_steps=None,
-                 checkpoint_dir=None,
-                 generator=None,
-                 lrg=None,
-                 mu=None):
+    def __init__(
+        self,
+        model=None,
+        data_loader=None,
+        train_times=1000,
+        alpha=0.5,
+        use_gpu=True,
+        opt_method="sgd",
+        save_steps=None,
+        checkpoint_dir=None,
+        generator=None,
+        lrg=None,
+        mu=None,
+    ):
 
         self.work_threads = 8
         self.train_times = train_times
@@ -48,7 +50,7 @@ class WCGTrainer(object):
         self.use_gpu = use_gpu
         self.save_steps = save_steps
         self.checkpoint_dir = checkpoint_dir
-        
+
         # the generator part
         assert generator is not None
         assert mu is not None
@@ -61,30 +63,36 @@ class WCGTrainer(object):
     def train_one_step(self, data):
         # training D
         self.optimizer.zero_grad()
-        loss, p_score = self.model({
-            'batch_h': self.to_var(data['batch_h'], self.use_gpu),
-            'batch_t': self.to_var(data['batch_t'], self.use_gpu),
-            'batch_r': self.to_var(data['batch_r'], self.use_gpu),
-            'batch_y': self.to_var(data['batch_y'], self.use_gpu),
-            'mode': data['mode']
-        })
+        loss, p_score = self.model(
+            {
+                "batch_h": self.to_var(data["batch_h"], self.use_gpu),
+                "batch_t": self.to_var(data["batch_t"], self.use_gpu),
+                "batch_r": self.to_var(data["batch_r"], self.use_gpu),
+                "batch_y": self.to_var(data["batch_y"], self.use_gpu),
+                "mode": data["mode"],
+            }
+        )
         # generate fake multimodal feature
-        batch_h_gen = self.to_var(data['batch_h'][0: self.batch_size], self.use_gpu)
-        batch_t_gen = self.to_var(data['batch_t'][0: self.batch_size], self.use_gpu)
-        batch_r = self.to_var(data['batch_r'][0: self.batch_size], self.use_gpu)
-        batch_hs, batch_hv, batch_ht = self.model.model.get_batch_ent_multimodal_embs(batch_h_gen)
-        batch_ts, batch_tv, batch_tt = self.model.model.get_batch_ent_multimodal_embs(batch_t_gen)
+        batch_h_gen = self.to_var(data["batch_h"][0 : self.batch_size], self.use_gpu)
+        batch_t_gen = self.to_var(data["batch_t"][0 : self.batch_size], self.use_gpu)
+        batch_r = self.to_var(data["batch_r"][0 : self.batch_size], self.use_gpu)
+        batch_hs, batch_hv, batch_ht = self.model.model.get_batch_ent_multimodal_embs(
+            batch_h_gen
+        )
+        batch_ts, batch_tv, batch_tt = self.model.model.get_batch_ent_multimodal_embs(
+            batch_t_gen
+        )
         batch_gen_hv, batch_gen_ht = self.generator(batch_hs, batch_hv, batch_ht)
         batch_gen_tv, batch_gen_tt = self.generator(batch_ts, batch_tv, batch_tt)
         scores, _ = self.model.model.get_fake_score(
             batch_h=batch_h_gen,
             batch_r=batch_r,
             batch_t=batch_t_gen,
-            mode=data['mode'],
+            mode=data["mode"],
             fake_hv=batch_gen_hv,
             fake_tv=batch_gen_tv,
             fake_ht=batch_gen_ht,
-            fake_tt=batch_gen_tt
+            fake_tt=batch_gen_tt,
         )
         # when training D: positive_score > fake_score
         #### chang this loss
@@ -97,19 +105,23 @@ class WCGTrainer(object):
         self.optimizer.step()
         # training G
         self.optimizer_g.zero_grad()
-        batch_hs, batch_hv, batch_ht = self.model.model.get_batch_ent_multimodal_embs(batch_h_gen)
-        batch_ts, batch_tv, batch_tt = self.model.model.get_batch_ent_multimodal_embs(batch_t_gen)
+        batch_hs, batch_hv, batch_ht = self.model.model.get_batch_ent_multimodal_embs(
+            batch_h_gen
+        )
+        batch_ts, batch_tv, batch_tt = self.model.model.get_batch_ent_multimodal_embs(
+            batch_t_gen
+        )
         batch_gen_hv, batch_gen_ht = self.generator(batch_hs, batch_hv, batch_ht)
         batch_gen_tv, batch_gen_tt = self.generator(batch_ts, batch_tv, batch_tt)
         scores, _ = self.model.model.get_fake_score(
             batch_h=batch_h_gen,
             batch_r=batch_r,
             batch_t=batch_t_gen,
-            mode=data['mode'],
+            mode=data["mode"],
             fake_hv=batch_gen_hv,
             fake_tv=batch_gen_tv,
             fake_ht=batch_gen_ht,
-            fake_tt=batch_gen_tt
+            fake_tt=batch_gen_tt,
         )
         loss_g = 0.0
         #### chang this loss
@@ -138,7 +150,8 @@ class WCGTrainer(object):
             )
             print(
                 "Learning Rate of D: {}\nLearning Rate of G: {}".format(
-                    self.alpha, self.alpha_g)
+                    self.alpha, self.alpha_g
+                )
             )
         else:
             raise NotImplementedError
@@ -152,11 +165,19 @@ class WCGTrainer(object):
                 loss, loss_g = self.train_one_step(data)
                 res += loss
                 res_g += loss_g
-            training_range.set_description("Epoch %d | D loss: %f, G loss %f" % (epoch, res, res_g))
+            training_range.set_description(
+                "Epoch %d | D loss: %f, G loss %f" % (epoch, res, res_g)
+            )
 
-            if self.save_steps and self.checkpoint_dir and (epoch + 1) % self.save_steps == 0:
+            if (
+                self.save_steps
+                and self.checkpoint_dir
+                and (epoch + 1) % self.save_steps == 0
+            ):
                 print("Epoch %d has finished, saving..." % (epoch))
-                self.model.save_checkpoint(os.path.join(self.checkpoint_dir + "-" + str(epoch) + ".ckpt"))
+                self.model.save_checkpoint(
+                    os.path.join(self.checkpoint_dir + "-" + str(epoch) + ".ckpt")
+                )
 
     def set_model(self, model):
         self.model = model
@@ -192,5 +213,3 @@ class WCGTrainer(object):
 
     def set_checkpoint_dir(self, checkpoint_dir):
         self.checkpoint_dir = checkpoint_dir
-
-

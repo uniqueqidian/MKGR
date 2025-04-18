@@ -26,21 +26,25 @@ class TrainDataSampler(object):
 
 class TrainDataLoader(object):
 
-    def __init__(self,
-                 in_path="./",
-                 tri_file=None,
-                 ent_file=None,
-                 rel_file=None,
-                 batch_size=None,
-                 nbatches=None,
-                 threads=8,
-                 sampling_mode="normal",
-                 bern_flag=False,
-                 filter_flag=True,
-                 neg_ent=1,
-                 neg_rel=0):
+    def __init__(
+        self,
+        in_path="./",
+        tri_file=None,
+        ent_file=None,
+        rel_file=None,
+        batch_size=None,
+        nbatches=None,
+        threads=8,
+        sampling_mode="normal",
+        bern_flag=False,
+        filter_flag=True,
+        neg_ent=1,
+        neg_rel=0,
+    ):
 
-        base_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../release/Base.so"))
+        base_file = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../release/Base.so")
+        )
         self.lib = ctypes.cdll.LoadLibrary(base_file)
         """argtypes"""
         self.lib.sampling.argtypes = [
@@ -54,7 +58,7 @@ class TrainDataLoader(object):
             ctypes.c_int64,
             ctypes.c_int64,
             ctypes.c_int64,
-            ctypes.c_int64
+            ctypes.c_int64,
         ]
         self.in_path = in_path
         self.tri_file = tri_file
@@ -78,11 +82,27 @@ class TrainDataLoader(object):
 
     def read(self):
         if self.in_path != None:
-            self.lib.setInPath(ctypes.create_string_buffer(self.in_path.encode(), len(self.in_path) * 2))
+            self.lib.setInPath(
+                ctypes.create_string_buffer(
+                    self.in_path.encode(), len(self.in_path) * 2
+                )
+            )
         else:
-            self.lib.setTrainPath(ctypes.create_string_buffer(self.tri_file.encode(), len(self.tri_file) * 2))
-            self.lib.setEntPath(ctypes.create_string_buffer(self.ent_file.encode(), len(self.ent_file) * 2))
-            self.lib.setRelPath(ctypes.create_string_buffer(self.rel_file.encode(), len(self.rel_file) * 2))
+            self.lib.setTrainPath(
+                ctypes.create_string_buffer(
+                    self.tri_file.encode(), len(self.tri_file) * 2
+                )
+            )
+            self.lib.setEntPath(
+                ctypes.create_string_buffer(
+                    self.ent_file.encode(), len(self.ent_file) * 2
+                )
+            )
+            self.lib.setRelPath(
+                ctypes.create_string_buffer(
+                    self.rel_file.encode(), len(self.rel_file) * 2
+                )
+            )
 
         self.lib.setBern(self.bern)
         self.lib.setWorkThreads(self.work_threads)
@@ -96,7 +116,9 @@ class TrainDataLoader(object):
             self.batch_size = self.tripleTotal // self.nbatches
         if self.nbatches is None:
             self.nbatches = self.tripleTotal // self.batch_size
-        self.batch_seq_size = self.batch_size * (1 + self.negative_ent + self.negative_rel)
+        self.batch_seq_size = self.batch_size * (
+            1 + self.negative_ent + self.negative_rel
+        )
 
         self.batch_h = np.zeros(self.batch_seq_size, dtype=np.int64)
         self.batch_t = np.zeros(self.batch_seq_size, dtype=np.int64)
@@ -119,14 +141,14 @@ class TrainDataLoader(object):
             0,
             self.filter,
             0,
-            0
+            0,
         )
         return {
             "batch_h": self.batch_h,
             "batch_t": self.batch_t,
             "batch_r": self.batch_r,
             "batch_y": self.batch_y,
-            "mode": "normal"
+            "mode": "normal",
         }
 
     def sampling_head(self):
@@ -141,14 +163,14 @@ class TrainDataLoader(object):
             -1,
             self.filter,
             0,
-            0
+            0,
         )
         return {
             "batch_h": self.batch_h,
-            "batch_t": self.batch_t[:self.batch_size],
-            "batch_r": self.batch_r[:self.batch_size],
+            "batch_t": self.batch_t[: self.batch_size],
+            "batch_r": self.batch_r[: self.batch_size],
             "batch_y": self.batch_y,
-            "mode": "head_batch"
+            "mode": "head_batch",
         }
 
     def sampling_tail(self):
@@ -163,14 +185,14 @@ class TrainDataLoader(object):
             1,
             self.filter,
             0,
-            0
+            0,
         )
         return {
-            "batch_h": self.batch_h[:self.batch_size],
+            "batch_h": self.batch_h[: self.batch_size],
             "batch_t": self.batch_t,
-            "batch_r": self.batch_r[:self.batch_size],
+            "batch_r": self.batch_r[: self.batch_size],
             "batch_y": self.batch_y,
-            "mode": "tail_batch"
+            "mode": "tail_batch",
         }
 
     def cross_sampling(self):
