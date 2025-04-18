@@ -10,6 +10,7 @@ from args import get_args
 if __name__ == "__main__":
     args = get_args()
     print(args)
+    
     # set the seed
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
@@ -28,6 +29,7 @@ if __name__ == "__main__":
     test_dataloader = TestDataLoader("./benchmarks/" + args.dataset + "/", "link")
     img_emb = torch.load("./embeddings/" + args.dataset + "-visual.pth")
     text_emb = torch.load("./embeddings/" + args.dataset + "-textual.pth")
+    
     # define the model
     kge_score = AdvRelRotatE(
         ent_tot=train_dataloader.get_ent_tot(),
@@ -39,6 +41,7 @@ if __name__ == "__main__":
         text_emb=text_emb,
     )
     print(kge_score)
+    
     # define the loss function
     model = NegativeSamplingGP(
         model=kge_score,
@@ -50,6 +53,7 @@ if __name__ == "__main__":
     adv_generator = CombinedGenerator(
         noise_dim=64, structure_dim=2 * args.dim, img_dim=2 * args.dim
     )
+    
     # train the model
     trainer = WCGTrainerGP(
         model=model,

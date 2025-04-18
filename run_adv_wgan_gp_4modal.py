@@ -10,6 +10,7 @@ from args import get_args
 if __name__ == "__main__":
     args = get_args()
     print(args)
+    
     # set the seed
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
@@ -30,6 +31,7 @@ if __name__ == "__main__":
     text_emb = torch.load("./embeddings/" + args.dataset + "-textual.pth")
     audio_emb = torch.load("./embeddings/" + args.dataset + "-audio.pth")
     video_emb = torch.load("./embeddings/" + args.dataset + "-video.pth")
+    
     # define the model
     kge_score = AdvRelRotatEKuai16K(
         ent_tot=train_dataloader.get_ent_tot(),
@@ -43,6 +45,7 @@ if __name__ == "__main__":
         video_emb=video_emb,
     )
     print(kge_score)
+    
     # define the loss function
     model = NegativeSamplingGP(
         model=kge_score,
@@ -56,6 +59,7 @@ if __name__ == "__main__":
     )
 
     tester = Tester(model=kge_score, data_loader=test_dataloader, use_gpu=True)
+    
     # train the model
     trainer = WCGTrainerKuai16KGP(
         model=model,
